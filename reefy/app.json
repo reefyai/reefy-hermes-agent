@@ -1,0 +1,43 @@
+{
+  "slug": "hermes-agent",
+  "version": "v2026.7.7.2",
+  "name": "Hermes Agent",
+  "icon": "icon.png",
+  "description": "Autonomous AI agent by Nous Research - web dashboard + gateway for Telegram/Discord/Slack",
+  "image": "nousresearch/hermes-agent:v2026.7.7.2",
+  "default_port": 9119,
+  "command": [
+    "sleep",
+    "infinity"
+  ],
+  "volumes": {
+    "data": {
+      "mount": "/opt/data",
+      "uid": 10000,
+      "backup": [
+        "borgbase"
+      ],
+      "excludes": [
+        "*.lock",
+        "*.pid",
+        "bin/**",
+        "cache/**",
+        "context_length_cache.yaml",
+        "sandboxes/**",
+        "checkpoints/**"
+      ]
+    }
+  },
+  "working_dir": "/opt/data/.hermes/workspace",
+  "shell": "cd /opt/data/.hermes/workspace && . /opt/hermes/.venv/bin/activate && exec bash",
+  "env": {
+    "HERMES_HOME": "/opt/data/.hermes",
+    "HERMES_ORIG_CWD": "/opt/data/.hermes/workspace",
+    "HERMES_DASHBOARD": "true",
+    "HERMES_DASHBOARD_INSECURE": "true",
+    "HERMES_GATEWAY_BOOTSTRAP_STATE": "running"
+  },
+  "tags": [
+    "ai-agents"
+  ]
+}
