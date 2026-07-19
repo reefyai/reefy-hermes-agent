@@ -14,6 +14,7 @@ import contextlib
 import logging
 import os
 import signal
+from collections.abc import Awaitable
 from dataclasses import dataclass
 from functools import partial
 
@@ -81,6 +82,30 @@ async def _copy_stream(
         writer.write_eof()
 
 
+async def _run_until_first_complete(*awaitables: Awaitable[object]) -> None:
+    """Run peer stream pumps until one ends, then cancel and reap the rest."""
+    tasks = [asyncio.create_task(awaitable) for awaitable in awaitables]
+    try:
+        _, pending = await asyncio.wait(
+            tasks,
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        for task in pending:
+            task.cancel()
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for result in results:
+            if isinstance(result, BaseException) and not isinstance(
+                result, asyncio.CancelledError
+            ):
+                raise result
+    finally:
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+
 async def relay_connection(
     client_reader: asyncio.StreamReader,
     client_writer: asyncio.StreamWriter,
@@ -94,7 +119,7 @@ async def relay_connection(
             asyncio.open_connection(config.target_host, config.target_port),
             timeout=config.connect_timeout,
         )
-        await asyncio.gather(
+        await _run_until_first_complete(
             _copy_stream(client_reader, upstream_writer),
             _copy_stream(upstream_reader, client_writer),
         )

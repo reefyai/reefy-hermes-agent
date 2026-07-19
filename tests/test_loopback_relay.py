@@ -1,5 +1,6 @@
 import asyncio
 import importlib.util
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -10,8 +11,9 @@ RELAY_PATH = (
     / "reefy"
     / "seed"
     / "data"
-    / "reefy-loopback-relay.py"
+    / "reefy-loopback-relay-v2026.7.7.2-reefy.1.py"
 )
+MANIFEST_PATH = Path(__file__).parents[1] / "reefy" / "app.json"
 SPEC = importlib.util.spec_from_file_location("reefy_loopback_relay", RELAY_PATH)
 relay = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
@@ -40,6 +42,14 @@ class LoopbackRelayTests(unittest.IsolatedAsyncioTestCase):
                 target_port=target_port,
             )
         )
+
+    def test_manifest_command_uses_versioned_relay_seed(self):
+        manifest = json.loads(MANIFEST_PATH.read_text())
+
+        self.assertRegex(manifest["version"], r".+-reefy\.[1-9][0-9]*$")
+        self.assertTrue(manifest["upstream_image"].endswith(manifest["image"]))
+        self.assertEqual(Path(manifest["command"][1]).name, RELAY_PATH.name)
+        self.assertIn(manifest["version"], RELAY_PATH.name)
 
     async def asyncTearDown(self):
         self.relay.close()
@@ -78,6 +88,28 @@ class LoopbackRelayTests(unittest.IsolatedAsyncioTestCase):
         finally:
             unavailable.close()
             await unavailable.wait_closed()
+
+    async def test_cancels_other_pump_when_one_direction_finishes(self):
+        blocked_started = asyncio.Event()
+        blocked_cancelled = asyncio.Event()
+
+        async def finishes_first():
+            await blocked_started.wait()
+
+        async def stays_blocked():
+            blocked_started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                blocked_cancelled.set()
+                raise
+
+        await relay._run_until_first_complete(
+            finishes_first(),
+            stays_blocked(),
+        )
+
+        self.assertTrue(blocked_cancelled.is_set())
 
 
 if __name__ == "__main__":
