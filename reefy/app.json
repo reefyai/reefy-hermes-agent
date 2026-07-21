@@ -1,15 +1,15 @@
 {
   "slug": "hermes-agent",
-  "version": "v2026.7.7.2-reefy.1",
+  "version": "v2026.7.20-reefy.1",
   "name": "Hermes Agent",
   "icon": "icon.png",
   "description": "Autonomous AI agent by Nous Research - web dashboard + gateway for Telegram/Discord/Slack",
-  "image": "nousresearch/hermes-agent:v2026.7.7.2",
-  "upstream_image": "docker.io/nousresearch/hermes-agent:v2026.7.7.2",
+  "image": "nousresearch/hermes-agent:v2026.7.20",
+  "upstream_image": "docker.io/nousresearch/hermes-agent:v2026.7.20",
   "default_port": 9119,
   "command": [
     "python3",
-    "/opt/data/reefy-loopback-relay-v2026.7.7.2-reefy.1.py"
+    "/opt/data/reefy-loopback-relay-v2026.7.20-reefy.1.py"
   ],
   "volumes": {
     "data": {
