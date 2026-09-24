@@ -11,7 +11,7 @@ RELAY_PATH = (
     / "reefy"
     / "seed"
     / "data"
-    / "reefy-loopback-relay-v2026.7.20-reefy.1.py"
+    / "reefy-loopback-relay-v2026.9.24-reefy.1.py"
 )
 MANIFEST_PATH = Path(__file__).parents[1] / "reefy" / "app.json"
 SPEC = importlib.util.spec_from_file_location("reefy_loopback_relay", RELAY_PATH)
